@@ -1,54 +1,35 @@
 import multiprocessing as mp
-import random
 import time
-import numpy as np
 
-def shuffleFile(filename):
-    with open(filename, 'r') as file:
-        lines = file.readlines()
+# Function to compute sum of squares for a range
+def sum_of_squares(start, end):
+    return sum(x * x for x in range(start, end))
 
-    random.shuffle(lines)
+if __name__ == "__main__":
+    N = 10**7  # Large dataset
 
-    with open(filename, 'w') as file:
-        file.writelines(lines)
-
-# Function to find the partition position
-def partition(array, low, high):
-
-    pivot = array[high]
-
-    i = low - 1
-
-    for j in range(low, high):
-        if array[j] <= pivot:
-
-            i = i + 1
-
-            (array[i], array[j]) = (array[j], array[i])
-
-    (array[i + 1], array[high]) = (array[high], array[i + 1])
-
-    return i + 1
-
-def quickSort(array, low, high):
-    if low < high:
-
-        pi = partition(array, low, high)
-
-        quickSort(array, low, pi - 1)
-
-        quickSort(array, pi + 1, high)
-
-if __name__ == '__main__':
-    file = "names.txt"
-    array = []
-    # Read the file and store to an array
-    with open(file, 'r') as file:
-        array = file.readlines()
-    
-    #Sort the array and record time, This is withouth parallel processing
-    arr1 = 
+    # **Single-threaded computation**
     start = time.time()
-    quickSort(array, 0, len(array)-1)
+    total = sum_of_squares(1, N + 1)  # +1 to include N
     end = time.time()
-    print(f"Runtime: {end - start:.6f} seconds")
+    print(f"Single-threaded result: {total}")
+    print(f"Single-threaded runtime: {end - start:.6f} seconds\n")
+
+    # **Parallel computation using multiprocessing**
+    num_workers = mp.cpu_count()  # Use all available CPU cores
+    pool = mp.Pool(processes=num_workers)
+
+    chunk_size = N // num_workers
+    ranges = [(i * chunk_size + 1, (i + 1) * chunk_size + 1) for i in range(num_workers)]
+    ranges[-1] = (ranges[-1][0], N + 1)  # Adjust the last range to include N
+
+    start = time.time()
+    results = pool.starmap(sum_of_squares, ranges)
+    total_parallel = sum(results)
+    end = time.time()
+
+    pool.close()
+    pool.join()
+
+    print(f"Parallel result: {total_parallel}")
+    print(f"Parallel runtime: {end - start:.6f} seconds")
